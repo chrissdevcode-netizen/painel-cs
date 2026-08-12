@@ -876,9 +876,94 @@
         });
       
         
-        // Aquí va la función de borrar llaves (Kill Switch)
+                // ==========================================
+        // 5. KILL SWITCH (BORRAR LLAVES)
+        // ==========================================
+        function borrarLlave(keyId) {
+            // 1. Ventana de confirmación de máxima seguridad
+            const confirmar = confirm(`⚠️ ALERTA DE SEGURIDAD ⚠️\n\n¿Estás completamente seguro de que deseas ELIMINAR y revocar el acceso a la llave:\n\n${keyId}?\n\nEsta acción cortará el acceso al script inmediatamente y no se puede deshacer.`);
+            
+            // 2. Si el admin le da a "Aceptar", se ejecuta la ejecución
+            if (confirmar) {
+                // Apuntar directamente a la llave exacta y destruirla
+                database.ref('keys/' + keyId).remove().then(() => {
+                    // No necesitamos actualizar el HTML aquí porque 
+                    // la función del Monitor en Vivo (.on('value')) 
+                    // detectará el cambio y redibujará la tabla automáticamente.
+                    console.log(`[KILL SWITCH] Llave ${keyId} eliminada del servidor.`);
+                }).catch((error) => {
+                    alert(`❌ Error al intentar eliminar la llave: ${error.message}`);
+                });
+            }
+        }
         
-        // Aquí va la función de pausar tiempo (Mantenimiento)
+
+                      // ==========================================
+        // 6. PAUSA GLOBAL VIP (MANTENIMIENTO)
+        // ==========================================
+        const togglePausaVIP = document.getElementById('btn-pause');
+
+        // Sincronizar el interruptor con el estado actual en Firebase al cargar la página
+        database.ref('system_status/vip_paused').on('value', (snapshot) => {
+            const estaPausado = snapshot.val() === true;
+            togglePausaVIP.checked = estaPausado;
+        });
+
+        // Evento al activar o desactivar el interruptor de mantenimiento
+        togglePausaVIP.addEventListener('change', () => {
+            const activarPausa = togglePausaVIP.checked;
+            const tiempoActualUnix = Math.floor(Date.now() / 1000);
+
+            // 1. Actualizar el estado global del sistema en Firebase
+            database.ref('system_status').set({
+                vip_paused: activarPausa,
+                paused_at: activarPausa ? tiempoActualUnix : 0
+            }).then(() => {
+                
+                // 2. Recorrer todas las llaves para congelar o descongelar el tiempo VIP
+                database.ref('keys').once('value', (snapshot) => {
+                    if (!snapshot.exists()) return;
+
+                    const updates = {};
+                    const llaves = snapshot.val();
+
+                    Object.keys(llaves).forEach(keyId => {
+                        const llave = llaves[keyId];
+
+                        // Aplicar solo a llaves de tipo VIP que no estén expiradas
+                        if (llave.type === 'VIP') {
+                            if (activarPausa && llave.status === 'active') {
+                                // CONGELAR: Guardamos los segundos que le restaban y pausamos
+                                const segundosRestantes = llave.expires_at - tiempoActualUnix;
+                                updates[`keys/${keyId}/remaining_seconds`] = segundosRestantes > 0 ? segundosRestantes : 0;
+                                updates[`keys/${keyId}/status`] = 'paused';
+                                
+                            } else if (!activarPausa && llave.status === 'paused') {
+                                // REANUDAR: Recalculamos la nueva fecha de expiración sumando lo que le restaba
+                                const nuevaExpiracion = tiempoActualUnix + (llave.remaining_seconds || 0);
+                                updates[`keys/${keyId}/expires_at`] = nuevaExpiracion;
+                                updates[`keys/${keyId}/status`] = 'active';
+                            }
+                        }
+                    });
+
+                    // Enviar los cambios masivos a la base de datos de forma ultra rápida
+                    if (Object.keys(updates).length > 0) {
+                        database.ref().update(updates);
+                    }
+                });
+
+            }).catch((error) => {
+                alert("Error al cambiar el estado de mantenimiento: " + error.message);
+                // Revertir el switch visual si hubo un error de red
+                togglePausaVIP.checked = !activarPausa;
+            });
+        });
+
+    </script>
+</body>
+</html>
+
 
     </script>
 </body>
