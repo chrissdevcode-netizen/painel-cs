@@ -710,11 +710,11 @@
       
 
         
-        // ==========================================
-        // 3. GENERADOR DE LLAVES VIP
-        // ==========================================
+    
+        //  GENERADOR DE LLAVES VIP
         
-        // Seleccionamos los elementos del generador VIP
+        
+        // selección de elementos del generador VIP
         const btnGenerarVIP = document.querySelector('.btn-vip');
         const inputUsuarioVIP = document.querySelector('input[placeholder="Nombre de usuario"]');
         const inputResultadoVIP = document.querySelector('.result-box input[readonly]');
@@ -739,7 +739,7 @@
                 randomStr += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
             }
             
-            // ¡AQUÍ ESTÁ TU PREFIJO PERSONALIZADO!
+            // ¡PREFIJO PERSONALIZADO!
             const keyString = "CHRISS-VIP-" + randomStr;
 
             // Cálculos de tiempo (Unix Timestamp)
@@ -794,9 +794,9 @@
       
       
         
-                // ==========================================
-        // 4. GENERADOR MASIVO FREE
-        // ==========================================
+            
+        //  GENERADOR MASIVO FREE
+        
         const btnGenerarFree = document.querySelector('.btn-free');
         const inputCantidadFree = document.querySelector('input[placeholder="Ej: 50"]');
         const textareaResultadoFree = document.querySelector('#page-free .result-box textarea');
@@ -819,7 +819,7 @@
             const segundosRestantes = horasDuracion * 3600; // 3600 segundos = 1 hora
             const tiempoExpiracion = tiempoActual + segundosRestantes;
 
-            let nuevasLlaves = {}; // Objeto para subir a Firebase de golpe
+            let nuevasLlaves = {}; // Objeto para subir al servidor de inmediato 
             let textoParaTextarea = ""; // Texto para mostrar en pantalla
 
             // Bucle para crear el lote masivo
@@ -876,9 +876,9 @@
         });
       
         
-                // ==========================================
-        // 5. KILL SWITCH (BORRAR LLAVES)
-        // ==========================================
+        
+        //  KILL SWITCH (BORRAR LLAVES)
+    
         function borrarLlave(keyId) {
             // 1. Ventana de confirmación de máxima seguridad
             const confirmar = confirm(`⚠️ ALERTA DE SEGURIDAD ⚠️\n\n¿Estás completamente seguro de que deseas ELIMINAR y revocar el acceso a la llave:\n\n${keyId}?\n\nEsta acción cortará el acceso al script inmediatamente y no se puede deshacer.`);
@@ -898,9 +898,9 @@
         }
         
 
-                      // ==========================================
-        // 6. PAUSA GLOBAL VIP (MANTENIMIENTO)
-        // ==========================================
+    
+        //  PAUSA DEL VIP (MANTENIMIENTO)
+
         const togglePausaVIP = document.getElementById('btn-pause');
 
         // Sincronizar el interruptor con el estado actual en Firebase al cargar la página
