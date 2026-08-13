@@ -216,9 +216,20 @@
         .search-box input:focus { border-color: var(--brand-primary); }
         .search-box span { position: absolute; left: 12px; top: 10px; font-size: 14px; opacity: 0.5; }
 
-        .table-wrapper { width: 100%; overflow-x: auto; background: transparent; border: 1px solid var(--border-light); border-radius: var(--radius-md); }
+        /* 🔥 Corrección de Tamaño de Tabla */
+        .table-wrapper { 
+            width: 100%; 
+            overflow-x: auto; 
+            overflow-y: auto; 
+            background: transparent; 
+            border: 1px solid var(--border-light); 
+            border-radius: var(--radius-md);
+            min-height: 400px; /* Fuerza el tamaño para que no se corte en móvil */
+            max-height: 600px;
+        }
+
         .data-table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
-        .data-table th { padding: 14px 20px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border-light); background: rgba(0,0,0,0.2); letter-spacing: 0.5px; }
+        .data-table th { padding: 14px 20px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border-light); background: rgba(0,0,0,0.2); letter-spacing: 0.5px; position: sticky; top: 0; z-index: 10; }
         .data-table td { padding: 14px 20px; font-size: 12px; border-bottom: 1px solid var(--border-light); color: #d1d1d1; }
         .data-table tbody tr:hover { background: rgba(255,255,255,0.015); }
         
@@ -270,7 +281,7 @@
             .topbar-title { display: none; }
             
             .topbar { padding: 0 20px; }
-            .pages-container { padding: 20px; }
+            .pages-container { padding: 20px; padding-bottom: 50px; } /* Más espacio abajo */
             .page-title { font-size: 22px; }
             
             .table-controls { flex-direction: column; align-items: stretch; }
@@ -300,7 +311,7 @@
         <div id="error-msg">Credenciales inválidas.</div>
     </div>
 
-<!-- Contenedor Principal (Dashboard) -->
+       <!-- Contenedor Principal (Dashboard) -->
     <div id="app-container">
         
         <!-- Sombra fondo móvil -->
@@ -367,11 +378,11 @@
                     <div class="grid-3">
                         <div class="card">
                             <div class="card-title">📋 Llaves Activas</div>
-                            <div class="card-value">0</div>
+                            <div class="card-value" id="count-total">0</div>
                         </div>
                         <div class="card">
                             <div class="card-title" style="color: var(--color-vip);">💎 Licencias VIP</div>
-                            <div class="card-value">0</div>
+                            <div class="card-value" id="count-vip">0</div>
                         </div>
                         <div class="card" style="padding: 15px 25px;">
                             <div class="pause-container" style="height: 100%;">
@@ -387,8 +398,7 @@
                         </div>
                     </div>
 
-
-                                      <!-- Contenedor Tabla -->
+        <!-- Contenedor Tabla -->
                     <div class="card" style="padding: 0;">
                         <div style="padding: 20px; border-bottom: 1px solid var(--border-light);">
                             <div class="table-controls">
@@ -396,6 +406,8 @@
                                     <button class="filter-tab active">Todas</button>
                                     <button class="filter-tab">VIP</button>
                                     <button class="filter-tab">Free</button>
+                                    <!-- 🔥 Pestaña Expiradas Agregada -->
+                                    <button class="filter-tab" style="color: var(--color-danger);">Expiradas</button>
                                 </div>
                                 <div class="search-box">
                                     <span>🔍</span>
@@ -404,7 +416,8 @@
                             </div>
                         </div>
                         
-                        <div class="table-wrapper" style="border: none; border-radius: 0;">
+                        <!-- 🔥 Tabla modificada para no recortarse -->
+                        <div class="table-wrapper">
                             <table class="data-table">
                                 <thead>
                                     <tr>
@@ -417,14 +430,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td class="code-font">KEY-VIP-XXXXX</td>
-                                        <td><span class="badge badge-vip">VIP</span></td>
-                                        <td style="font-weight: 600; color: #fff;">UsuarioTest</td>
-                                        <td><span style="color: var(--color-success);">🟢 Activa</span></td>
-                                        <td>0/2</td>
-                                        <td><button class="action-btn">Kill</button></td>
-                                    </tr>
+                                    <!-- Aquí se insertan las llaves dinámicamente -->
                                 </tbody>
                             </table>
                         </div>
@@ -511,15 +517,11 @@
         </div>
     </div>
 
-
-      <!-- ==========================================
-         IMPORTAR FIREBASE SDK (SIEMPRE ARRIBA DEL TUYO)
+     <!-- ==========================================
+         IMPORTAR FIREBASE SDK
     =========================================== -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-
-         
 
     <script>
         // Funciones de UI básicas
@@ -578,11 +580,12 @@
         // Iniciar la aplicación y la base de datos
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
+        
         // ==========================================
         // 2. MONITOR EN VIVO Y FILTROS
         // ==========================================
         
-        let filtroActual = 'Todas'; // Estado por defecto
+        let filtroActual = 'Todas'; 
         
         // 2.1 Lógica de Botones Pestañas (Filtros) y Buscador
         const tabsFiltro = document.querySelectorAll('.filter-tab');
@@ -590,9 +593,7 @@
         
         tabsFiltro.forEach(tab => {
             tab.addEventListener('click', (e) => {
-                // Quitar la iluminación del botón anterior
                 tabsFiltro.forEach(t => t.classList.remove('active'));
-                // Iluminar el botón clickeado
                 e.target.classList.add('active');
                 
                 filtroActual = e.target.innerText.trim();
@@ -600,9 +601,9 @@
             });
         });
 
-        // Escuchar cada vez que escribes en el buscador
         inputBuscador.addEventListener('input', ejecutarFiltros);
 
+        // 🔥 Lógica Mejorada para soportar "Expiradas"
         function ejecutarFiltros() {
             const filas = document.querySelectorAll('.data-table tbody tr');
             const textoBuscado = inputBuscador.value.toLowerCase();
@@ -614,15 +615,18 @@
                 const keyTexto = fila.cells[0].innerText.toLowerCase();
                 const tipoLlave = fila.cells[1].innerText.trim(); // "VIP" o "FREE"
                 const usuarioTexto = fila.cells[2].innerText.toLowerCase();
+                const estadoLlave = fila.cells[3].innerText.toLowerCase(); // Leeremos el estado (Ej: "🔴 expirada")
 
                 let pasaFiltroPestaña = false;
+                
+                // Aplicando Filtros por pestaña
                 if (filtroActual === 'Todas') pasaFiltroPestaña = true;
                 if (filtroActual === 'VIP' && tipoLlave === 'VIP') pasaFiltroPestaña = true;
                 if (filtroActual === 'Free' && tipoLlave === 'FREE') pasaFiltroPestaña = true;
+                if (filtroActual === 'Expiradas' && estadoLlave.includes('expirada')) pasaFiltroPestaña = true;
 
                 const pasaFiltroBusqueda = keyTexto.includes(textoBuscado) || usuarioTexto.includes(textoBuscado);
 
-                // Si cumple ambos filtros, se muestra; si no, se oculta
                 if (pasaFiltroPestaña && pasaFiltroBusqueda) {
                     fila.style.display = '';
                 } else {
@@ -631,7 +635,7 @@
             });
         }
 
-        // 2.2 Formatear Tiempo
+         // 2.2 Formatear Tiempo
         function calcularTiempo(expiresAt, status) {
             if (status === 'paused') {
                 return '<span style="color: var(--color-warning);">⏸️ PAUSADA</span>';
@@ -654,10 +658,8 @@
         // 2.3 Escuchar Firebase en vivo y actualizar contadores
         database.ref('keys').on('value', (snapshot) => {
             const tbody = document.querySelector('.data-table tbody');
-            
-            // Forzamos la selección de los contadores directamente desde el HTML si falta el ID
-            const countTotal = document.getElementById('count-total') || document.querySelectorAll('.card-value')[0];
-            const countVip = document.getElementById('count-vip') || document.querySelectorAll('.card-value')[1];
+            const countTotal = document.getElementById('count-total');
+            const countVip = document.getElementById('count-vip');
             
             tbody.innerHTML = ''; 
             let totalLlaves = 0;
@@ -665,7 +667,6 @@
 
             if (snapshot.exists()) {
                 const datos = snapshot.val();
-                // Ordenar para mostrar las más nuevas primero
                 const listaLlaves = Object.keys(datos).map(k => ({ id: k, ...datos[k] }));
                 listaLlaves.sort((a, b) => b.created_at - a.created_at);
 
@@ -696,25 +697,29 @@
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">La base de datos está vacía.</td></tr>';
             }
 
-            // Aplicar números en los grandes a pesar de no tener ID
             if (countTotal) countTotal.innerText = totalLlaves;
             if (countVip) countVip.innerText = vipLlaves;
             
-            // Reaplicar los filtros después de recargar la tabla
             ejecutarFiltros();
         });
 
         function borrarLlave(keyId) {
-            console.log("Pendiente Kill Switch:", keyId);
-                      }
-      
-
+            const confirmar = confirm(`⚠️ ALERTA DE SEGURIDAD ⚠️\n\n¿Estás completamente seguro de que deseas ELIMINAR y revocar el acceso a la llave:\n\n${keyId}?\n\nEsta acción cortará el acceso al script inmediatamente y no se puede deshacer.`);
+            
+            if (confirmar) {
+                database.ref('keys/' + keyId).remove().then(() => {
+                    console.log(`[KILL SWITCH] Llave ${keyId} eliminada del servidor.`);
+                }).catch((error) => {
+                    alert(`❌ Error al intentar eliminar la llave: ${error.message}`);
+                });
+            }
+        }
         
-    
-        //  GENERADOR DE LLAVES VIP
+        // ==========================================
+        //  GENERADORES
+        // ==========================================
         
-        
-        // selección de elementos del generador VIP
+        // Generador VIP
         const btnGenerarVIP = document.querySelector('.btn-vip');
         const inputUsuarioVIP = document.querySelector('input[placeholder="Nombre de usuario"]');
         const inputResultadoVIP = document.querySelector('.result-box input[readonly]');
@@ -725,29 +730,23 @@
             const diasDuracion = parseInt(document.querySelector('input[name="v_dur"]:checked').value);
             const limiteHwid = parseInt(document.querySelector('input[name="v_hwid"]:checked').value);
             
-            // Validación: Campo vacío
             if (userName === "") {
                 inputUsuarioVIP.style.borderColor = "var(--color-danger)";
                 setTimeout(() => inputUsuarioVIP.style.borderColor = "var(--border-light)", 1500);
-                return; // Detiene la ejecución si no hay usuario
+                return;
             }
 
-            // Generar identificador de 8 caracteres alfanuméricos
             const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
             let randomStr = '';
             for (let i = 0; i < 8; i++) {
                 randomStr += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
             }
             
-            // ¡PREFIJO PERSONALIZADO!
             const keyString = "CHRISS-VIP-" + randomStr;
-
-            // Cálculos de tiempo (Unix Timestamp)
             const tiempoActual = Math.floor(Date.now() / 1000);
-            const segundosRestantes = diasDuracion * 86400; // 86400 segundos = 1 día
+            const segundosRestantes = diasDuracion * 86400; 
             const tiempoExpiracion = tiempoActual + segundosRestantes;
 
-            // Objeto estructurado según el JSON Schema
             const keyData = {
                 type: "VIP",
                 user: userName,
@@ -758,13 +757,9 @@
                 status: "active"
             };
 
-            // Enviar los datos a la base de datos de Firebase
             database.ref('keys/' + keyString).set(keyData).then(() => {
-                // Actualizar la interfaz visual
                 inputResultadoVIP.value = keyString;
-                inputUsuarioVIP.value = ""; // Limpia el input del cliente
-                
-                // Efecto de éxito en el input
+                inputUsuarioVIP.value = "";
                 inputResultadoVIP.style.borderColor = "var(--color-success)";
                 setTimeout(() => inputResultadoVIP.style.borderColor = "rgba(255, 215, 0, 0.2)", 1500);
             }).catch((error) => {
@@ -772,18 +767,14 @@
             });
         });
 
-        // Lógica del botón "Copiar Llave"
         btnCopiarVIP.addEventListener('click', () => {
             const llave = inputResultadoVIP.value;
             if(llave !== "ESPERANDO DATOS..." && llave !== "") {
                 navigator.clipboard.writeText(llave);
-                
-                // Animación visual del botón
                 const textoOriginal = btnCopiarVIP.innerText;
                 btnCopiarVIP.innerText = "¡Copiada!";
                 btnCopiarVIP.style.background = "var(--color-success)";
                 btnCopiarVIP.style.color = "#000";
-                
                 setTimeout(() => {
                     btnCopiarVIP.innerText = textoOriginal;
                     btnCopiarVIP.style.background = "rgba(255,255,255,0.05)";
@@ -791,12 +782,8 @@
                 }, 1500);
             }
         });
-      
-      
-        
-            
-        //  GENERADOR MASIVO FREE
-        
+
+      // Generador FREE
         const btnGenerarFree = document.querySelector('.btn-free');
         const inputCantidadFree = document.querySelector('input[placeholder="Ej: 50"]');
         const textareaResultadoFree = document.querySelector('#page-free .result-box textarea');
@@ -806,29 +793,27 @@
             const cantidad = parseInt(inputCantidadFree.value);
             const horasDuracion = parseInt(document.querySelector('input[name="f_dur"]:checked').value);
 
-            // Validar que la cantidad sea un número válido y mayor a 0
             if (isNaN(cantidad) || cantidad <= 0) {
                 inputCantidadFree.style.borderColor = "var(--color-danger)";
                 setTimeout(() => inputCantidadFree.style.borderColor = "var(--border-light)", 1500);
                 return;
             }
 
-            const limitesHwidFree = 1; // Llaves Free siempre limitadas a 1 dispositivo
+            const limitesHwidFree = 1;
             const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
             const tiempoActual = Math.floor(Date.now() / 1000);
-            const segundosRestantes = horasDuracion * 3600; // 3600 segundos = 1 hora
+            const segundosRestantes = horasDuracion * 3600; 
             const tiempoExpiracion = tiempoActual + segundosRestantes;
 
-            let nuevasLlaves = {}; // Objeto para subir al servidor de inmediato 
-            let textoParaTextarea = ""; // Texto para mostrar en pantalla
+            let nuevasLlaves = {}; 
+            let textoParaTextarea = ""; 
 
-            // Bucle para crear el lote masivo
             for (let i = 0; i < cantidad; i++) {
                 let randomStr = '';
-                for (let j = 0; j < 8; j++) { // 8 letras aleatorias
+                for (let j = 0; j < 8; j++) {
                     randomStr += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
                 }
-                const keyString = "CHRISS-FREE-" + randomStr; // Prefijo personalizado
+                const keyString = "CHRISS-FREE-" + randomStr; 
 
                 nuevasLlaves[keyString] = {
                     type: "FREE",
@@ -839,16 +824,12 @@
                     hwid_limit: limitesHwidFree,
                     status: "active"
                 };
-
                 textoParaTextarea += keyString + "\n";
             }
 
-            // Subir todas las llaves a Firebase al mismo tiempo (método update)
             database.ref('keys').update(nuevasLlaves).then(() => {
                 textareaResultadoFree.value = textoParaTextarea.trim();
-                inputCantidadFree.value = ""; // Limpiar input
-                
-                // Efecto visual de éxito
+                inputCantidadFree.value = ""; 
                 textareaResultadoFree.style.borderColor = "var(--color-free)";
                 setTimeout(() => textareaResultadoFree.style.borderColor = "transparent", 1500);
             }).catch((error) => {
@@ -856,17 +837,14 @@
             });
         });
 
-        // Lógica del botón "Copiar Texto"
         btnCopiarFree.addEventListener('click', () => {
             const texto = textareaResultadoFree.value;
             if (texto !== "") {
                 navigator.clipboard.writeText(texto);
-                
                 const textoOriginal = btnCopiarFree.innerText;
                 btnCopiarFree.innerText = "¡LOTE COPIADO!";
                 btnCopiarFree.style.background = "var(--color-success)";
                 btnCopiarFree.style.color = "#000";
-                
                 setTimeout(() => {
                     btnCopiarFree.innerText = textoOriginal;
                     btnCopiarFree.style.background = "rgba(52, 152, 219, 0.1)";
@@ -874,53 +852,26 @@
                 }, 2000);
             }
         });
-      
         
-        
-        //  KILL SWITCH (BORRAR LLAVES)
-    
-        function borrarLlave(keyId) {
-            // 1. Ventana de confirmación de máxima seguridad
-            const confirmar = confirm(`⚠️ ALERTA DE SEGURIDAD ⚠️\n\n¿Estás completamente seguro de que deseas ELIMINAR y revocar el acceso a la llave:\n\n${keyId}?\n\nEsta acción cortará el acceso al script inmediatamente y no se puede deshacer.`);
-            
-            // 2. Si el admin le da a "Aceptar", se ejecuta la ejecución
-            if (confirmar) {
-                // Apuntar directamente a la llave exacta y destruirla
-                database.ref('keys/' + keyId).remove().then(() => {
-                    // No necesitamos actualizar el HTML aquí porque 
-                    // la función del Monitor en Vivo (.on('value')) 
-                    // detectará el cambio y redibujará la tabla automáticamente.
-                    console.log(`[KILL SWITCH] Llave ${keyId} eliminada del servidor.`);
-                }).catch((error) => {
-                    alert(`❌ Error al intentar eliminar la llave: ${error.message}`);
-                });
-            }
-        }
-        
-
-    
+        // ==========================================
         //  PAUSA DEL VIP (MANTENIMIENTO)
-
+        // ==========================================
         const togglePausaVIP = document.getElementById('btn-pause');
 
-        // Sincronizar el interruptor con el estado actual en Firebase al cargar la página
         database.ref('system_status/vip_paused').on('value', (snapshot) => {
             const estaPausado = snapshot.val() === true;
             togglePausaVIP.checked = estaPausado;
         });
 
-        // Evento al activar o desactivar el interruptor de mantenimiento
         togglePausaVIP.addEventListener('change', () => {
             const activarPausa = togglePausaVIP.checked;
             const tiempoActualUnix = Math.floor(Date.now() / 1000);
 
-            // 1. Actualizar el estado global del sistema en Firebase
             database.ref('system_status').set({
                 vip_paused: activarPausa,
                 paused_at: activarPausa ? tiempoActualUnix : 0
             }).then(() => {
                 
-                // 2. Recorrer todas las llaves para congelar o descongelar el tiempo VIP
                 database.ref('keys').once('value', (snapshot) => {
                     if (!snapshot.exists()) return;
 
@@ -930,16 +881,13 @@
                     Object.keys(llaves).forEach(keyId => {
                         const llave = llaves[keyId];
 
-                        // Aplicar solo a llaves de tipo VIP que no estén expiradas
                         if (llave.type === 'VIP') {
                             if (activarPausa && llave.status === 'active') {
-                                // CONGELAR: Guardamos los segundos que le restaban y pausamos
                                 const segundosRestantes = llave.expires_at - tiempoActualUnix;
                                 updates[`keys/${keyId}/remaining_seconds`] = segundosRestantes > 0 ? segundosRestantes : 0;
                                 updates[`keys/${keyId}/status`] = 'paused';
                                 
                             } else if (!activarPausa && llave.status === 'paused') {
-                                // REANUDAR: Recalculamos la nueva fecha de expiración sumando lo que le restaba
                                 const nuevaExpiracion = tiempoActualUnix + (llave.remaining_seconds || 0);
                                 updates[`keys/${keyId}/expires_at`] = nuevaExpiracion;
                                 updates[`keys/${keyId}/status`] = 'active';
@@ -947,7 +895,6 @@
                         }
                     });
 
-                    // Enviar los cambios masivos a la base de datos de forma ultra rápida
                     if (Object.keys(updates).length > 0) {
                         database.ref().update(updates);
                     }
@@ -955,16 +902,10 @@
 
             }).catch((error) => {
                 alert("Error al cambiar el estado de mantenimiento: " + error.message);
-                // Revertir el switch visual si hubo un error de red
                 togglePausaVIP.checked = !activarPausa;
             });
         });
 
     </script>
 </body>
-</html>
-
-
-    </script>
-</body>
-</html>
+</html>  
