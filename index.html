@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CHRISS HUB | Control Panel Enterprise</title>
+    <title>CHRISS  | PANEL</title>
     
     <style>
         /* Variables y Configuración Global */
@@ -518,7 +518,7 @@
     </div>
 
 
-       <!--IMPORTAR FIREBASE SDK-->
+       <!--IMPORTAR SERVIDOR SDK-->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -856,7 +856,7 @@
 
         const togglePausaVIP = document.getElementById('btn-pause');
 
-        // Sincronizar el interruptor con el estado actual en Firebase al cargar la página
+        // Sincronizar el interruptor con el estado actual en el servidor al cargar la página
         database.ref('system_status/vip_paused').on('value', (snapshot) => {
             const estaPausado = snapshot.val() === true;
             togglePausaVIP.checked = estaPausado;
@@ -867,13 +867,13 @@
             const activarPausa = togglePausaVIP.checked;
             const tiempoActualUnix = Math.floor(Date.now() / 1000);
 
-            // 1. Actualizar el estado global del sistema en Firebase
+            //  Actualizar el estado global del sistema en Firebase
             database.ref('system_status').set({
                 vip_paused: activarPausa,
                 paused_at: activarPausa ? tiempoActualUnix : 0
             }).then(() => {
                 
-                // 2. Recorrer todas las llaves para congelar o descongelar el tiempo VIP
+                // Recorrer todas las llaves para congelar o descongelar el tiempo VIP
                 database.ref('keys').once('value', (snapshot) => {
                     if (!snapshot.exists()) return;
 
